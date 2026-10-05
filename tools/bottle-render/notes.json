@@ -1,0 +1,11 @@
+[
+{"id":"rose","name":"Damask Rose","family":"Floral","color":"#E0607E"},
+{"id":"bergamot","name":"Bergamot","family":"Citrus","color":"#F0B23E"},
+{"id":"oud","name":"Oud","family":"Woody","color":"#7A3F27"},
+{"id":"vanilla","name":"Vanilla","family":"Gourmand","color":"#EBC77F"},
+{"id":"lavender","name":"Lavender","family":"Aromatic","color":"#9C83D4"},
+{"id":"seasalt","name":"Sea Salt","family":"Fresh","color":"#4FB3C6"},
+{"id":"sandalwood","name":"Sandalwood","family":"Woody","color":"#C88A55"},
+{"id":"amber","name":"Amber","family":"Resinous","color":"#D46F22"},
+{"id":"vetiver","name":"Vetiver","family":"Earthy","color":"#5E8A4A"}
+]
