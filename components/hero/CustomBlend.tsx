@@ -1,134 +1,257 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- the bottle is a stack of pixel-aligned render layers; next/image wrappers would break the alignment. */
-import { useEffect } from "react";
-import { startCustomBlend } from "./blend";
+/* eslint-disable @next/next/no-img-element -- dynamic photo elements and the WebGL fallback still. */
+import { useEffect, type MouseEvent } from "react";
+import { useRouter } from "next/navigation";
+import SiteFooter from "@/components/SiteFooter";
+import SiteHeader from "@/components/SiteHeader";
 
-export default function CustomBlend() {
+type Props = {
+  variant?: "home" | "shop"; // home: header, studio, footer · shop: just the studio, under the shop layout
+};
+
+export default function CustomBlend({ variant = "home" }: Props) {
+  const home = variant === "home";
+  const Main = home ? "main" : "div"; // the shop page provides its own <main>
+  const router = useRouter();
+
+  // The studio engine (and, after it, three.js) loads in its own chunk, so the page and its
+  // skeletons paint first. It stops on unmount, so navigating away and back restarts it cleanly.
   useEffect(() => {
-    startCustomBlend();
+    let stop: (() => void) | undefined;
+    let cancelled = false;
+    import("./blend").then(({ startCustomBlend }) => {
+      if (!cancelled) stop = startCustomBlend();
+    });
+    // Start fetching three.js alongside, rather than after blend.js asks for it
+    import("./flacon3d");
+    return () => {
+      cancelled = true;
+      stop?.();
+    };
   }, []);
 
+  // blend.js renders plain <a> tags (e.g. "View Your Bag"): route them client-side for instant opens
+  const onClick = (e: MouseEvent) => {
+    const a = (e.target as Element).closest("a");
+    const href = a?.getAttribute("href");
+    if (!a || !href?.startsWith("/") || a.closest("header, footer, nav") || a.target) return;
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    router.push(href);
+  };
+
   return (
-    <>
+    <div className={home ? "atelier-root" : "studio-embed"} onClick={onClick}>
+      {/* Background ambient lighting canvas */}
       <canvas className="ambient" id="ambient" aria-hidden="true" />
-      <canvas className="fx" id="fx" aria-hidden="true" />
 
-      <header className="site-header">
-        <div className="wrap">
-          <a className="brand" href="#top" aria-label="Urban Virtue home">
-            <small>Washington, DC</small>
-            <span>Urban Virtue</span>
-          </a>
-          <nav className="site-nav" aria-label="Main">
-            <a href="#top">Home</a>
-            <a href="#top">Shop</a>
-            <a href="#mix" aria-current="page">Custom Blend</a>
-            <a href="#top">Visit</a>
-            <a href="#top">Contact</a>
-          </nav>
-          <div className="header-icons">
-            <a className="icon-btn hide-sm" href="#top" aria-label="Search">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.6-3.6" /></svg>
-            </a>
-            <a className="icon-btn hide-sm" href="#top" aria-label="Wishlist">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z" /></svg>
-            </a>
-            <a className="icon-btn" href="#top" aria-label="Bag">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true"><path d="M5.5 8h13l-1 12h-11z" /><path d="M9 8V6.5a3 3 0 0 1 6 0V8" /></svg>
-            </a>
-          </div>
-        </div>
-      </header>
+      {/* Site Header */}
+      {home && <SiteHeader current="studio" />}
 
-      <main id="top">
-        <section className="hero" id="mix" aria-labelledby="hero-title">
-          <div className="wrap">
-            <div className="intro reveal">
-              <p className="eyebrow">Custom blend studio</p>
-              <h1 id="hero-title">
-                <span className="w"><span>Create</span></span>{" "}
-                <span className="w"><span>Your</span></span>{" "}
-                <span className="w"><span><em>Signature</em></span></span>{" "}
-                <span className="w"><span>Scent</span></span>
+      {/* Main Experience */}
+      <Main id="top">
+        {/* ============================================================== */}
+        {/* HERO: BESPOKE BLEND STUDIO WITH REALISTIC FLACON & SPLASHES    */}
+        {/* ============================================================== */}
+        <section className="hero" id="custom-studio" aria-labelledby="hero-title">
+          <div className="wrap hero-grid">
+            {/* LEFT CONSOLE: ATELIER FORMULATION */}
+            <div className="intro-controls">
+              <h1 id="hero-title" className="sr-only">
+                Urban Virtue Custom Blend Studio
               </h1>
-              <p className="lede">Pick two or three notes. Each one pours a third of the bottle, then we blend them into a perfume made only for you.</p>
-              <hr className="rule" />
-            </div>
 
-            <div className="controls reveal reveal-2">
-              <div id="blendBox">
-                <div className="blend-head">
-                  <ol className="steps" id="steps" aria-label="Progress">
-                    <li data-step="1"><b>1</b>Pick notes</li>
-                    <li data-step="2"><b>2</b>Mix</li>
-                    <li data-step="3"><b>3</b>Add to bag</li>
+              {/* Formulation Console */}
+              <div className="console-panel" id="blendBox">
+                <div className="console-header">
+                  <ol className="steps-list" id="steps" aria-label="Blending Progress">
+                    <li data-step="1" className="is-active">
+                      <span className="step-num">1</span>
+                      <span className="step-txt">Pick</span>
+                    </li>
+                    <li data-step="2">
+                      <span className="step-num">2</span>
+                      <span className="step-txt">Blend</span>
+                    </li>
+                    <li data-step="3">
+                      <span className="step-num">3</span>
+                      <span className="step-txt">Seal</span>
+                    </li>
                   </ol>
-                  <span className="count" id="count" aria-label="Notes chosen">0 / 3</span>
+                  <div className="counter-reset-wrap">
+                    <span className="tier-counter" id="count" aria-label="Notes selected">
+                      0 / 3
+                    </span>
+                    <button className="reset-btn" id="resetBtn" type="button" title="Start over with an empty flacon">
+                      ✦ Reset
+                    </button>
+                  </div>
                 </div>
-                <ol className="slots" id="slots" />
-                <p className="status" id="status" aria-live="polite" />
-              </div>
 
-              <div className="buy-row">
-                <div className="price"><small>Price</small><span id="price">[PRICE]</span></div>
-                <div className="sizes" role="group" aria-label="Bottle size" id="sizes" />
-              </div>
+                {/* Slots */}
+                <ol className="formula-slots" id="slots" />
+                {/* Loading skeletons: each shows until blend.js fills the container just before it */}
+                <ol className="formula-slots skel-after" aria-hidden="true">
+                  {[0, 1, 2].map((i) => (
+                    <li key={i}>
+                      <div className="slot skel-shimmer" />
+                    </li>
+                  ))}
+                </ol>
+                <p className="status-narrative" id="status" aria-live="polite">
+                  Select your first noble essence to begin the pour.
+                </p>
 
-              <div className="actions" id="actions" />
+                {/* Live Scent Accord Breakdown */}
+                <div className="accord-box" id="accordBreakdown">
+                  <div
+                    className="accord-composite-track"
+                    title="Accord balance spectrum"
+                  >
+                    <span style={{ width: "20%", background: "#e25c80" }} />
+                    <span style={{ width: "20%", background: "#ba7b43" }} />
+                    <span style={{ width: "20%", background: "#3fa7ba" }} />
+                    <span style={{ width: "20%", background: "#dca74e" }} />
+                    <span style={{ width: "20%", background: "#c96218" }} />
+                  </div>
+                  <div className="accord-labels-row">
+                    <span className="accord-tag">
+                      <i style={{ background: "#e25c80" }} />
+                      Floral 20%
+                    </span>
+                    <span className="accord-tag">
+                      <i style={{ background: "#ba7b43" }} />
+                      Woody 20%
+                    </span>
+                    <span className="accord-tag">
+                      <i style={{ background: "#3fa7ba" }} />
+                      Fresh 20%
+                    </span>
+                    <span className="accord-tag">
+                      <i style={{ background: "#dca74e" }} />
+                      Gourmand 20%
+                    </span>
+                    <span className="accord-tag">
+                      <i style={{ background: "#c96218" }} />
+                      Oriental 20%
+                    </span>
+                  </div>
+                </div>
+
+                {/* Bottle Size Selector & Price */}
+                <div className="flacon-tier-selector">
+                  <div className="price-display">
+                    <span className="price-val" id="price">
+                      $85.00
+                    </span>
+                  </div>
+                  <div className="sizes-pill-group" role="group" aria-label="Flacon volume" id="sizes" />
+                  <div className="sizes-pill-group skel-after" aria-hidden="true">
+                    {[0, 1, 2].map((i) => (
+                      <span key={i} className="size skel-shimmer skel-pill" />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Personalize Label Input */}
+                <div className="personalize-box">
+                  <label htmlFor="customNameInput" className="personalize-label">
+                    <span>Flacon Inscription</span>
+                  </label>
+                  <div className="input-wrap">
+                    <input
+                      type="text"
+                      id="customNameInput"
+                      placeholder="e.g. Velvet Solstice, No. 07, Your Name"
+                      maxLength={24}
+                    />
+                    <span className="gold-seal-icon">✦</span>
+                  </div>
+                </div>
+
+                {/* Action Row */}
+                <div className="actions-cluster" id="actions" />
+                <div className="actions-cluster skel-after" aria-hidden="true">
+                  <span className="btn skel-shimmer skel-btn" />
+                </div>
+              </div>
             </div>
 
-            <div className="stage reveal">
-              <div className="deco" aria-hidden="true"><span className="deco-ring" /><span className="deco-ring deco-ring-2"><i /></span></div>
-              <div className="bottle" id="bottle" role="img" aria-label="Your perfume bottle">
+            {/* ============================================================== */}
+            {/* CENTER STAGE: THE REALISTIC BOTTLE & BOTANICAL INGREDIENTS     */}
+            {/* ============================================================== */}
+            <div className="stage" id="stageContainer">
+              {/* Dynamic Volumetric Background Elements */}
+              <div className="stage-backdrop" aria-hidden="true">
+                <div className="stage-glow" id="stageGlow" />
+                <div className="stage-caustic" id="stageCaustic" />
+
+                {/* BOTANICAL RAW INGREDIENTS FLORA LAYER */}
+                <div className="botanical-stage" id="botanicalStage" />
+              </div>
+
+              {/* The Glass Flacon: real-time 3D render (30 / 50 / 100 ml) mounted by flacon3d.js */}
+              <div className="bottle" id="bottle" role="img" aria-label="Your bespoke Urban Virtue perfume flacon in 3D">
                 <div className="bottle-frame" id="frame">
-                  <img className="layer photo" src="/hero/bottle-empty.webp" alt="" width={720} height={960} fetchPriority="high" />
-                  <div className="shadows" aria-hidden="true">
-                    <span className="sh sh-cast" />
-                    <span className="sh sh-ambient" />
-                    <span className="sh sh-contact" />
-                    <span className="sh sh-tint" id="shTint" />
-                    <span className="sh sh-cap" />
-                  </div>
-                  <span className="stream" id="stream" />
-                  <div className="liquid" id="liquid">
-                    <img className="layer" src="/hero/bottle-liquid.webp" alt="" width={720} height={960} />
-                    <div className="tint" id="tintLayers" />
-                    <div className="tint tint-blend" id="tintBlend" />
-                    <div className="tint tint-hue" id="tintHue" />
-                    <div className="tint tint-hue tint-blend" id="tintHueBlend" />
-                  </div>
-                  <span className="surface" id="surface" />
-                  <img className="layer glints" src="/hero/bottle-glints.webp" alt="" width={720} height={960} />
-                  <div className="shine" id="shine" />
-                  <div className="glare" id="glare" />
-                  <div className="tag" id="tag">
-                    <span className="tag-brand">Urban Virtue</span>
-                    <span className="tag-name" id="tagName">Your Blend</span>
-                    <span className="tag-notes" id="tagNotes">Pick 2 to 3 notes</span>
-                  </div>
-                  <div className="cap-pos" id="cap">
-                    <div className="cap-float">
-                      <img className="layer" src="/hero/bottle-cap.webp" alt="" width={720} height={960} />
-                    </div>
-                  </div>
+                  <img
+                    className="flacon-fallback"
+                    src="/hero/bottle-empty.webp"
+                    alt=""
+                    width={720}
+                    height={960}
+                  />
+                </div>
+                {/* Shown until the 3D flacon draws its first frame */}
+                <div className="flacon-skeleton bottle-skeleton" aria-hidden="true">
+                  <span className="flacon-skeleton-cap" />
+                  <span className="flacon-skeleton-body" />
                 </div>
               </div>
+
             </div>
 
-            <aside className="notes reveal reveal-3" aria-labelledby="notes-title">
-              <div className="notes-head">
+            {/* ============================================================== */}
+            {/* RIGHT CONSOLE: THE NOBLE SCENT ORGAN                           */}
+            {/* ============================================================== */}
+            <aside className="notes-console" aria-labelledby="organ-title">
+              <div className="organ-head">
                 <div>
-                  <h2 id="notes-title">Choose your notes</h2>
-                  <p>Tap to pour. Tap again to remove.</p>
+                  <span className="organ-tag">9 NOBLE ESSENCES</span>
+                  <h2 id="organ-title">The Fragrance Organ</h2>
                 </div>
-                <button className="surprise" type="button" id="surprise">Surprise me</button>
+                <button
+                  className="surprise-btn"
+                  type="button"
+                  id="surprise"
+                  title="Let our Master Perfumer curate a signature surprise formula"
+                >
+                  <span className="sparkle">✦</span> Surprise Me
+                </button>
               </div>
+
+              {/* Grid of 9 Artisanal Notes */}
               <ul className="note-grid" id="noteGrid" />
+              <ul className="note-grid skel-after" aria-hidden="true">
+                {Array.from({ length: 9 }, (_, i) => (
+                  <li key={i}>
+                    <span className="note skel-note">
+                      <span className="note-img skel-shimmer" />
+                      <span className="skel-line skel-shimmer" />
+                      <span className="skel-line skel-line-short skel-shimmer" />
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </aside>
           </div>
         </section>
-      </main>
-    </>
+      </Main>
+
+      {/* ============================================================== */}
+      {/* LUXURY EDITORIAL FOOTER                                         */}
+      {/* ============================================================== */}
+      {home && <SiteFooter />}
+    </div>
   );
 }

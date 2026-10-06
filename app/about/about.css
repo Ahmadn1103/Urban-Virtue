@@ -1,0 +1,61 @@
+/* About page intro; the sections themselves are styled in app/hero.css */
+.about-intro {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+  padding-block: clamp(48px, 8vw, 96px) clamp(24px, 4vw, 40px);
+  text-align: center;
+}
+
+.about-eyebrow {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold-rich);
+}
+
+.about-title {
+  margin: 0;
+  max-width: 18ch;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(36px, 5vw, 64px);
+  line-height: 1.06;
+  letter-spacing: -0.01em;
+}
+
+.about-lede {
+  margin: 0;
+  max-width: 56ch;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--ink-muted);
+}
+
+.about-chapters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.about-chapters a {
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-muted);
+  transition: all 0.2s ease;
+}
+
+.about-chapters a:hover {
+  border-color: var(--accent);
+  color: var(--ink);
+}

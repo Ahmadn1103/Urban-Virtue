@@ -43,3 +43,12 @@ next-env.d.ts
 # bottle render outputs
 tools/bottle-render/final_*.png
 tools/bottle-render/final_*.json
+
+# browser-test output and screenshots
+.playwright-mcp/
+/final_studio_*.png
+
+# originals of the product photos: the site serves the copies in public/images
+# (assests/products.csv is still tracked; the build reads it)
+/assests/images/
+/assests/images.zip
